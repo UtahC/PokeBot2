@@ -46,3 +46,9 @@ Network Trash Folder
 Temporary Items
 .apdisk
 PokemonGo/RocketAPI/Console/bin/Release/Release.zip
+
+*.suo
+bin/
+obj/
+Debug/
+Release/
