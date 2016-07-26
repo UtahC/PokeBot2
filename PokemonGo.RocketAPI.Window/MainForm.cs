@@ -17,10 +17,11 @@ using PokemonGo.RocketAPI.Exceptions;
 using PokemonGo.RocketAPI.Extensions;
 using PokemonGo.RocketAPI.GeneratedCode;
 
-namespace PokemonGo.RocketAPI.Console
+namespace PokemonGo.RocketAPI.Window
 {
     public partial class MainForm : Form
     {
+        Dictionary<string, string> _indivConsoleText = new Dictionary<string, string>();
 
         public MainForm()
         {
@@ -193,7 +194,7 @@ namespace PokemonGo.RocketAPI.Console
 
                 await Task.Delay(5000);
                 PrintLevel(client);
-                ConsoleLevelTitle(profile.Profile.Username, client);
+                //ConsoleLevelTitle(profile.Profile.Username, client);
                 await ExecuteFarmingPokestopsAndPokemons(client);
                 ColoredConsoleWrite(Color.Red, $"[{DateTime.Now.ToString("HH:mm:ss")}] No nearby usefull locations found. Please wait 10 seconds.");
                 await Task.Delay(10000);
@@ -617,6 +618,5 @@ namespace PokemonGo.RocketAPI.Console
             logTextBox.SelectionStart = logTextBox.Text.Length;
             logTextBox.ScrollToCaret();
         }
-
     }
 }

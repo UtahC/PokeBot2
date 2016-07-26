@@ -13,7 +13,7 @@ using PokemonGo.RocketAPI.Extensions;
 using PokemonGo.RocketAPI.GeneratedCode;
 using PokemonGo.RocketAPI.Console.Properties;
 
-namespace PokemonGo.RocketAPI.Console
+namespace PokemonGo.RocketAPI.Window
 {
     static class Program
     {
