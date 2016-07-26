@@ -16,12 +16,15 @@ using PokemonGo.RocketAPI.Enums;
 using PokemonGo.RocketAPI.Exceptions;
 using PokemonGo.RocketAPI.Extensions;
 using PokemonGo.RocketAPI.GeneratedCode;
+using System.Threading;
+using System.Reflection;
 
 namespace PokemonGo.RocketAPI.Window
 {
     public partial class MainForm : Form
     {
         Dictionary<string, string> _indivConsoleText = new Dictionary<string, string>();
+        string _totalConsoleText = "";
 
         public MainForm()
         {
@@ -35,6 +38,9 @@ namespace PokemonGo.RocketAPI.Window
             stopwatch.Start();
 
             IEnumerable<string> refreshTokens = File.ReadLines(@AppDomain.CurrentDomain.BaseDirectory + @"\token.txt");
+            Thread.CurrentThread.Name = "-All-";
+            comboBox1.Items.Add("-All-");
+            comboBox1.SelectedIndex = 0;
 
             foreach (var refreshToken in refreshTokens)
             {
@@ -46,26 +52,37 @@ namespace PokemonGo.RocketAPI.Window
                     }
                     catch (PtcOfflineException)
                     {
-                        ColoredConsoleWrite(Color.Red, "PTC Servers are probably down OR your credentials are wrong. Try google");
+                        ColoredConsoleWrite(Color.Red, "PTC Servers are probably down OR your credentials are wrong. Try google", "-All-");
                     }
                     catch (Exception ex)
                     {
-                        ColoredConsoleWrite(Color.Red, $"[{DateTime.Now.ToString("HH:mm:ss")}] Unhandled exception: {ex}");
+                        ColoredConsoleWrite(Color.Red, $"Unhandled exception: {ex}", "-All-");
                     }
                 });
             }
         }
 
-        public void ColoredConsoleWrite(Color color,string value)
+        public void ColoredConsoleWrite(Color color, string value, string userName)
         {
+
             if (InvokeRequired)
             {
-                this.Invoke(new Action<Color, string>(ColoredConsoleWrite), new object[] { color, value });
+                this.Invoke(new Action<Color, string, string>(ColoredConsoleWrite), new object[] { color, value, userName});
                 return;
             }
-            string textToAppend = DateTime.Now.ToString(CultureInfo.InvariantCulture) + " - " + value + "\r\n";
-            logTextBox.SelectionColor = color;
-            logTextBox.AppendText(textToAppend);
+            //string textToAppend = Thread.CurrentThread.Name == "main" ? string.Format($"[{Thread.CurrentThread.Name}] ") : "";
+            string textToAppend = string.Format($"[{ DateTime.Now.ToString("HH:mm:ss")}] {value}\r\n");
+            if (userName == comboBox1.SelectedItem.ToString() || comboBox1.SelectedItem.ToString() == "-All-")
+            { 
+                logTextBox.SelectionColor = color;
+                if (comboBox1.SelectedItem.ToString() == "-All-")
+                    logTextBox.AppendText(string.Format($"[{userName}] {textToAppend}"));
+                else
+                    logTextBox.AppendText(textToAppend);
+            }
+            if (userName != "-All-")
+                _indivConsoleText[userName] += textToAppend;
+            _totalConsoleText += string.Format($"[{userName}] {textToAppend}");
         }
 
         private static readonly ISettings ClientSettings = new Settings();
@@ -121,7 +138,7 @@ namespace PokemonGo.RocketAPI.Window
                     if (evolvePokemonOutProto.Result == 1)
                     {
                         ColoredConsoleWrite(Color.Cyan,
-                            $"[{DateTime.Now.ToString("HH:mm:ss")}] Evolved {pokemon.PokemonId} successfully for {evolvePokemonOutProto.ExpAwarded}xp");
+                            $"Evolved {pokemon.PokemonId} successfully for {evolvePokemonOutProto.ExpAwarded}xp", client.userName);
 
                         countOfEvolvedUnits++;
                         xpCount += evolvePokemonOutProto.ExpAwarded;
@@ -139,9 +156,36 @@ namespace PokemonGo.RocketAPI.Window
                 } while (evolvePokemonOutProto.Result == 1);
                 if (countOfEvolvedUnits > 0)
                     ColoredConsoleWrite(Color.Cyan,
-                        $"[{DateTime.Now.ToString("HH:mm:ss")}] Evolved {countOfEvolvedUnits} pieces of {pokemon.PokemonId} for {xpCount}xp");
+                        $"Evolved {countOfEvolvedUnits} pieces of {pokemon.PokemonId} for {xpCount}xp", client.userName);
 
                 await Task.Delay(3000);
+            }
+        }
+
+        private delegate void SetControlThreadSafeDelegate(
+            Control control,
+            string propertyName,
+            object propertyValue);
+
+        public static void SetControlThreadSafe(
+            Control control,
+            string methodName,
+            object propertyValue)
+        {
+            if (control.InvokeRequired)
+            {
+                control.Invoke(new SetControlThreadSafeDelegate
+                (SetControlThreadSafe),
+                new object[] { control, methodName, propertyValue });
+            }
+            else
+            {
+                control.GetType().InvokeMember(
+                    methodName,
+                    BindingFlags.InvokeMethod,
+                    null,
+                    control,
+                    new object[] { propertyValue });
             }
         }
 
@@ -164,19 +208,30 @@ namespace PokemonGo.RocketAPI.Window
                     inventory.InventoryDelta.InventoryItems.Select(i => i.InventoryItemData?.Pokemon)
                         .Where(p => p != null && p?.PokemonId > 0);
 
-                ColoredConsoleWrite(Color.Yellow, "----------------------------");
-                ColoredConsoleWrite(Color.Cyan, "Account: " + ClientSettings.PtcUsername);
-                ColoredConsoleWrite(Color.Cyan, "Password: " + ClientSettings.PtcPassword + "\n");
-                ColoredConsoleWrite(Color.DarkGray, "Latitude: " + ClientSettings.DefaultLatitude);
-                ColoredConsoleWrite(Color.DarkGray, "Longitude: " + ClientSettings.DefaultLongitude);
-                ColoredConsoleWrite(Color.Yellow, "----------------------------");
-                ColoredConsoleWrite(Color.DarkGray, "Your Account:\n");
-                ColoredConsoleWrite(Color.DarkGray, "Name: " + profile.Profile.Username);
-                ColoredConsoleWrite(Color.DarkGray, "Team: " + profile.Profile.Team);
-                ColoredConsoleWrite(Color.DarkGray, "Stardust: " + profile.Profile.Currency.ToArray()[1].Amount);
+                var userName = profile.Profile.Username;
+                Thread.CurrentThread.Name = userName;
+                if (!_indivConsoleText.ContainsKey(userName))
+                {
+                    _indivConsoleText.Add(userName, "");
+                    comboBox1.Invoke((MethodInvoker)(() =>
+                    {
+                        comboBox1.Items.Add(userName);
+                    }));
+                }
 
-                ColoredConsoleWrite(Color.Cyan, "\nFarming Started");
-                ColoredConsoleWrite(Color.Yellow, "----------------------------");
+                ColoredConsoleWrite(Color.Yellow, "----------------------------", client.userName);
+                ColoredConsoleWrite(Color.Cyan, "Account: " + ClientSettings.PtcUsername, client.userName);
+                ColoredConsoleWrite(Color.Cyan, "Password: " + ClientSettings.PtcPassword + "\n", client.userName);
+                ColoredConsoleWrite(Color.DarkGray, "Latitude: " + ClientSettings.DefaultLatitude, client.userName);
+                ColoredConsoleWrite(Color.DarkGray, "Longitude: " + ClientSettings.DefaultLongitude, client.userName);
+                ColoredConsoleWrite(Color.Yellow, "----------------------------", client.userName);
+                ColoredConsoleWrite(Color.DarkGray, "Your Account:\n", client.userName);
+                ColoredConsoleWrite(Color.DarkGray, "Name: " + profile.Profile.Username, client.userName);
+                ColoredConsoleWrite(Color.DarkGray, "Team: " + profile.Profile.Team, client.userName);
+                ColoredConsoleWrite(Color.DarkGray, "Stardust: " + profile.Profile.Currency.ToArray()[1].Amount, client.userName);
+
+                ColoredConsoleWrite(Color.Cyan, "\nFarming Started", client.userName);
+                ColoredConsoleWrite(Color.Yellow, "----------------------------", client.userName);
                 if (ClientSettings.TransferType == "leaveStrongest")
                     await TransferAllButStrongestUnwantedPokemon(client);
                 else if (ClientSettings.TransferType == "all")
@@ -186,7 +241,7 @@ namespace PokemonGo.RocketAPI.Window
                 else if (ClientSettings.TransferType == "cp")
                     await TransferAllWeakPokemon(client, ClientSettings.TransferCPThreshold);
                 else
-                    ColoredConsoleWrite(Color.DarkGray, $"[{DateTime.Now.ToString("HH:mm:ss")}] Transfering pokemon disabled");
+                    ColoredConsoleWrite(Color.DarkGray, $"Transfering pokemon disabled", client.userName);
                 if (ClientSettings.EvolveAllGivenPokemons)
                     await EvolveAllGivenPokemons(client, pokemons);
 
@@ -196,15 +251,15 @@ namespace PokemonGo.RocketAPI.Window
                 PrintLevel(client);
                 //ConsoleLevelTitle(profile.Profile.Username, client);
                 await ExecuteFarmingPokestopsAndPokemons(client);
-                ColoredConsoleWrite(Color.Red, $"[{DateTime.Now.ToString("HH:mm:ss")}] No nearby usefull locations found. Please wait 10 seconds.");
+                ColoredConsoleWrite(Color.Red, $"No nearby usefull locations found. Please wait 10 seconds.", client.userName);
                 await Task.Delay(10000);
                 Execute();
             }
-            catch (TaskCanceledException tce) { ColoredConsoleWrite(Color.White, "Task Canceled Exception - Restarting"); Execute(); }
-            catch (UriFormatException ufe) { ColoredConsoleWrite(Color.White, "System URI Format Exception - Restarting"); Execute(); }
-            catch (ArgumentOutOfRangeException aore) { ColoredConsoleWrite(Color.White, "ArgumentOutOfRangeException - Restarting"); Execute(); }
-            catch (ArgumentNullException ane) { ColoredConsoleWrite(Color.White, "Argument Null Refference - Restarting"); Execute(); }
-            catch (NullReferenceException nre) { ColoredConsoleWrite(Color.White, "Null Refference - Restarting"); Execute(); }
+            catch (TaskCanceledException tce) { ColoredConsoleWrite(Color.White, "Task Canceled Exception - Restarting", client.userName); Execute(); }
+            catch (UriFormatException ufe) { ColoredConsoleWrite(Color.White, "System URI Format Exception - Restarting", client.userName); Execute(); }
+            catch (ArgumentOutOfRangeException aore) { ColoredConsoleWrite(Color.White, "ArgumentOutOfRangeException - Restarting", client.userName); Execute(); }
+            catch (ArgumentNullException ane) { ColoredConsoleWrite(Color.White, "Argument Null Refference - Restarting", client.userName); Execute(); }
+            catch (NullReferenceException nre) { ColoredConsoleWrite(Color.White, "Null Refference - Restarting", client.userName); Execute(); }
             //await ExecuteCatchAllNearbyPokemons(client);
         }
 
@@ -246,10 +301,10 @@ namespace PokemonGo.RocketAPI.Window
                     pokemonName = Convert.ToString(pokemon.PokemonId);
                 if (caughtPokemonResponse.Status == CatchPokemonResponse.Types.CatchStatus.CatchSuccess)
                 {
-                    ColoredConsoleWrite(Color.Green, $"[{DateTime.Now.ToString("HH:mm:ss")}] We caught a {pokemonName} with {encounterPokemonResponse?.WildPokemon?.PokemonData?.Cp} CP");
+                    ColoredConsoleWrite(Color.Green, $"We caught a {pokemonName} with {encounterPokemonResponse?.WildPokemon?.PokemonData?.Cp} CP", client.userName);
                 }
                 else
-                    ColoredConsoleWrite(Color.Red, $"[{DateTime.Now.ToString("HH:mm:ss")}] {pokemonName} with {encounterPokemonResponse?.WildPokemon?.PokemonData?.Cp} CP got away..");
+                    ColoredConsoleWrite(Color.Red, $"{pokemonName} with {encounterPokemonResponse?.WildPokemon?.PokemonData?.Cp} CP got away..", client.userName);
 
                 if (ClientSettings.TransferType == "leaveStrongest")
                     await TransferAllButStrongestUnwantedPokemon(client);
@@ -277,7 +332,7 @@ namespace PokemonGo.RocketAPI.Window
                 var fortSearch = await client.SearchFort(pokeStop.Id, pokeStop.Latitude, pokeStop.Longitude);
 
                 StringWriter PokeStopOutput = new StringWriter();
-                PokeStopOutput.Write($"[{DateTime.Now.ToString("HH:mm:ss")}] ");
+                PokeStopOutput.Write($"");
                 if (fortInfo.Name != string.Empty)
                     PokeStopOutput.Write("PokeStop: " + fortInfo.Name);
                 if (fortSearch.ExperienceAwarded != 0)
@@ -288,7 +343,7 @@ namespace PokemonGo.RocketAPI.Window
                     PokeStopOutput.Write($", Eggs: {fortSearch.PokemonDataEgg}");
                 if (GetFriendlyItemsString(fortSearch.ItemsAwarded) != string.Empty)
                     PokeStopOutput.Write($", Items: {GetFriendlyItemsString(fortSearch.ItemsAwarded)} ");
-                ColoredConsoleWrite(Color.Cyan, PokeStopOutput.ToString());
+                ColoredConsoleWrite(Color.Cyan, PokeStopOutput.ToString(), client.userName);
 
                 if (fortSearch.ExperienceAwarded != 0)
                     TotalExperience += (fortSearch.ExperienceAwarded);
@@ -313,7 +368,7 @@ namespace PokemonGo.RocketAPI.Window
 
         private async Task TransferAllButStrongestUnwantedPokemon(Client client)
         {
-            //ColoredConsoleWrite(ConsoleColor.White, $"[{DateTime.Now.ToString("HH:mm:ss")}] Firing up the meat grinder");
+            //ColoredConsoleWrite(ConsoleColor.White, $"Firing up the meat grinder");
 
             var unwantedPokemonTypes = new[]
             {
@@ -361,11 +416,11 @@ namespace PokemonGo.RocketAPI.Window
                     pokemonOfDesiredType.Skip(1) // keep the strongest one for potential battle-evolving
                         .ToList();
 
-                //ColoredConsoleWrite(ConsoleColor.White, $"[{DateTime.Now.ToString("HH:mm:ss")}] Grinding {unwantedPokemon.Count} pokemons of type {unwantedPokemonType}");
+                //ColoredConsoleWrite(ConsoleColor.White, $"Grinding {unwantedPokemon.Count} pokemons of type {unwantedPokemonType}");
                 await TransferAllGivenPokemons(client, unwantedPokemon);
             }
 
-            //ColoredConsoleWrite(ConsoleColor.White, $"[{DateTime.Now.ToString("HH:mm:ss")}] Finished grinding all the meat");
+            //ColoredConsoleWrite(ConsoleColor.White, $"Finished grinding all the meat");
         }
 
         public static float Perfect(PokemonData poke)
@@ -378,7 +433,7 @@ namespace PokemonGo.RocketAPI.Window
             foreach (var pokemon in unwantedPokemons)
             {
                 if (Perfect(pokemon) >= keepPerfectPokemonLimit) continue;
-                ColoredConsoleWrite(Color.White, $"[{DateTime.Now.ToString("HH:mm:ss")}] Pokemon {pokemon.PokemonId} with {pokemon.Cp} CP has IV percent less than {keepPerfectPokemonLimit}%");
+                ColoredConsoleWrite(Color.White, $"Pokemon {pokemon.PokemonId} with {pokemon.Cp} CP has IV percent less than {keepPerfectPokemonLimit}%", client.userName);
 
                 if (pokemon.Favorite == 0)
                 {
@@ -395,14 +450,14 @@ namespace PokemonGo.RocketAPI.Window
 
                     if (transferPokemonResponse.Status == 1)
                     {
-                        ColoredConsoleWrite(Color.Magenta, $"[{DateTime.Now.ToString("HH:mm:ss")}] Transferred {pokemon.PokemonId} with {pokemon.Cp} CP");
+                        ColoredConsoleWrite(Color.Magenta, $"Transferred {pokemon.PokemonId} with {pokemon.Cp} CP", client.userName);
                     }
                     else
                     {
                         var status = transferPokemonResponse.Status;
 
-                        ColoredConsoleWrite(Color.Red, $"[{DateTime.Now.ToString("HH:mm:ss")}] Somehow failed to transfer {pokemon.PokemonId} with {pokemon.Cp} CP. " +
-                                                 $"ReleasePokemonOutProto.Status was {status}");
+                        ColoredConsoleWrite(Color.Red, $"Somehow failed to transfer {pokemon.PokemonId} with {pokemon.Cp} CP. " +
+                                                 $"ReleasePokemonOutProto.Status was {status}", client.userName);
                     }
 
                     await Task.Delay(3000);
@@ -432,7 +487,7 @@ namespace PokemonGo.RocketAPI.Window
                     {
                         var transfer = await client.TransferPokemon(dubpokemon.Id);
                         ColoredConsoleWrite(Color.DarkGreen,
-                            $"[{DateTime.Now.ToString("HH:mm:ss")}] Transferred {dubpokemon.PokemonId} with {dubpokemon.Cp} CP (Highest is {dupes.ElementAt(i).Last().value.Cp})");
+                            $"Transferred {dubpokemon.PokemonId} with {dubpokemon.Cp} CP (Highest is {dupes.ElementAt(i).Last().value.Cp})", client.userName);
 
                     }
                 }
@@ -441,7 +496,7 @@ namespace PokemonGo.RocketAPI.Window
 
         private async Task TransferAllWeakPokemon(Client client, int cpThreshold)
         {
-            //ColoredConsoleWrite(ConsoleColor.White, $"[{DateTime.Now.ToString("HH:mm:ss")}] Firing up the meat grinder");
+            //ColoredConsoleWrite(ConsoleColor.White, $"Firing up the meat grinder");
 
             var doNotTransfer = new[] //these will not be transferred even when below the CP threshold
             {
@@ -480,12 +535,12 @@ namespace PokemonGo.RocketAPI.Window
 
                 //var unwantedPokemon = pokemonOfDesiredType.Skip(1) // keep the strongest one for potential battle-evolving
                 //                                          .ToList();
-                ColoredConsoleWrite(Color.Gray, $"[{DateTime.Now.ToString("HH:mm:ss")}] Grinding {pokemonToDiscard.Count} pokemon below {cpThreshold} CP.");
+                ColoredConsoleWrite(Color.Gray, $"Grinding {pokemonToDiscard.Count} pokemon below {cpThreshold} CP.", client.userName);
                 await TransferAllGivenPokemons(client, pokemonToDiscard);
 
             }
 
-            ColoredConsoleWrite(Color.Gray, $"[{DateTime.Now.ToString("HH:mm:ss")}] Finished grinding all the meat");
+            ColoredConsoleWrite(Color.Gray, $"Finished grinding all the meat", client.userName);
         }
 
         public async Task PrintLevel(Client client)
@@ -497,12 +552,12 @@ namespace PokemonGo.RocketAPI.Window
                 {
                     int XpDiff = GetXpDiff(client, v.Level);
                     if (ClientSettings.LevelOutput == "time")
-                        ColoredConsoleWrite(Color.Yellow, $"[{DateTime.Now.ToString("HH:mm:ss")}] Current Level: " + v.Level + " (" + (v.Experience - v.PrevLevelXp - XpDiff) + "/" + (v.NextLevelXp - v.PrevLevelXp - XpDiff) + ")");
+                        ColoredConsoleWrite(Color.Yellow, $"Current Level: " + v.Level + " (" + (v.Experience - v.PrevLevelXp - XpDiff) + "/" + (v.NextLevelXp - v.PrevLevelXp - XpDiff) + ")", client.userName);
                     else if (ClientSettings.LevelOutput == "levelup")
                         if (Currentlevel != v.Level)
                         {
                             Currentlevel = v.Level;
-                            ColoredConsoleWrite(Color.Magenta, $"[{DateTime.Now.ToString("HH:mm:ss")}] Current Level: " + v.Level + ". XP needed for next Level: " + (v.NextLevelXp - v.Experience));
+                            ColoredConsoleWrite(Color.Magenta, $"Current Level: " + v.Level + ". XP needed for next Level: " + (v.NextLevelXp - v.Experience), client.userName);
                         }
                 }
 
@@ -617,6 +672,15 @@ namespace PokemonGo.RocketAPI.Window
         {
             logTextBox.SelectionStart = logTextBox.Text.Length;
             logTextBox.ScrollToCaret();
+        }
+
+        private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (comboBox1.SelectedItem.ToString() == "-All-")
+                logTextBox.Text = _totalConsoleText;
+            else
+                logTextBox.Text = _indivConsoleText[comboBox1.SelectedItem.ToString()];
+
         }
     }
 }

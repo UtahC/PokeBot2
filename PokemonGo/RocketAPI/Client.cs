@@ -21,6 +21,7 @@ namespace PokemonGo.RocketAPI
 {
     public class Client
     {
+        public string userName { get; private set; }
         private readonly HttpClient _httpClient;
         private ISettings _settings;
         private string _accessToken;
@@ -305,8 +306,10 @@ namespace PokemonGo.RocketAPI
         {
             var profileRequest = RequestBuilder.GetInitialRequest(_accessToken, _authType, _currentLat, _currentLng, 10,
                 new Request.Types.Requests {Type = (int) RequestType.GET_PLAYER});
-            return
-                await _httpClient.PostProtoPayload<Request, GetPlayerResponse>($"https://{_apiUrl}/rpc", profileRequest);
+            var profile = await _httpClient.PostProtoPayload<Request, GetPlayerResponse>($"https://{_apiUrl}/rpc", profileRequest);
+            userName = profile.Profile.Username;
+            return profile;
+                
         }
 
         public async Task<DownloadSettingsResponse> GetSettings()
