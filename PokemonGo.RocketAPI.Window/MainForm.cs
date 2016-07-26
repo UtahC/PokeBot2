@@ -253,13 +253,13 @@ namespace PokemonGo.RocketAPI.Window
                 await ExecuteFarmingPokestopsAndPokemons(client);
                 ColoredConsoleWrite(Color.Red, $"No nearby usefull locations found. Please wait 10 seconds.", client.userName);
                 await Task.Delay(10000);
-                Execute();
+                Execute(refreshToken);
             }
-            catch (TaskCanceledException tce) { ColoredConsoleWrite(Color.White, "Task Canceled Exception - Restarting", client.userName); Execute(); }
-            catch (UriFormatException ufe) { ColoredConsoleWrite(Color.White, "System URI Format Exception - Restarting", client.userName); Execute(); }
-            catch (ArgumentOutOfRangeException aore) { ColoredConsoleWrite(Color.White, "ArgumentOutOfRangeException - Restarting", client.userName); Execute(); }
-            catch (ArgumentNullException ane) { ColoredConsoleWrite(Color.White, "Argument Null Refference - Restarting", client.userName); Execute(); }
-            catch (NullReferenceException nre) { ColoredConsoleWrite(Color.White, "Null Refference - Restarting", client.userName); Execute(); }
+            catch (TaskCanceledException tce) { ColoredConsoleWrite(Color.White, "Task Canceled Exception - Restarting", client.userName); Execute(refreshToken); }
+            catch (UriFormatException ufe) { ColoredConsoleWrite(Color.White, "System URI Format Exception - Restarting", client.userName); Execute(refreshToken); }
+            catch (ArgumentOutOfRangeException aore) { ColoredConsoleWrite(Color.White, "ArgumentOutOfRangeException - Restarting", client.userName); Execute(refreshToken); }
+            catch (ArgumentNullException ane) { ColoredConsoleWrite(Color.White, "Argument Null Refference - Restarting", client.userName); Execute(refreshToken); }
+            catch (NullReferenceException nre) { ColoredConsoleWrite(Color.White, "Null Refference - Restarting", client.userName); Execute(refreshToken); }
             //await ExecuteCatchAllNearbyPokemons(client);
         }
 
