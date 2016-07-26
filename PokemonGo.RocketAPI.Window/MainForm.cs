@@ -16,12 +16,12 @@ using PokemonGo.RocketAPI.Enums;
 using PokemonGo.RocketAPI.Exceptions;
 using PokemonGo.RocketAPI.Extensions;
 using PokemonGo.RocketAPI.GeneratedCode;
-using PokemonGo.RocketAPI.Console.Config;
 
 namespace PokemonGo.RocketAPI.Console
 {
     public partial class MainForm : Form
     {
+
         public MainForm()
         {
             InitializeComponent();
@@ -32,21 +32,27 @@ namespace PokemonGo.RocketAPI.Console
         {
             stopwatch = new Stopwatch();
             stopwatch.Start();
-            Task.Run(() =>
+
+            IEnumerable<string> refreshTokens = File.ReadLines(@AppDomain.CurrentDomain.BaseDirectory + @"\token.txt");
+
+            foreach (var refreshToken in refreshTokens)
             {
-                try
+                Task.Run(() =>
                 {
-                    Execute();
-                }
-                catch (PtcOfflineException)
-                {
-                    ColoredConsoleWrite(Color.Red, "PTC Servers are probably down OR your credentials are wrong. Try google");
-                }
-                catch (Exception ex)
-                {
-                    ColoredConsoleWrite(Color.Red, $"[{DateTime.Now.ToString("HH:mm:ss")}] Unhandled exception: {ex}");
-                }
-            });
+                    try
+                    {
+                        Execute(refreshToken);
+                    }
+                    catch (PtcOfflineException)
+                    {
+                        ColoredConsoleWrite(Color.Red, "PTC Servers are probably down OR your credentials are wrong. Try google");
+                    }
+                    catch (Exception ex)
+                    {
+                        ColoredConsoleWrite(Color.Red, $"[{DateTime.Now.ToString("HH:mm:ss")}] Unhandled exception: {ex}");
+                    }
+                });
+            }
         }
 
         public void ColoredConsoleWrite(Color color,string value)
@@ -138,9 +144,9 @@ namespace PokemonGo.RocketAPI.Console
             }
         }
 
-        private async void Execute()
+        private async void Execute(string refreshToken = "")
         {
-            var client = new Client(ClientSettings);
+            var client = new Client(ClientSettings, refreshToken);
             try
             {
                 if (ClientSettings.AuthType == AuthType.Ptc)

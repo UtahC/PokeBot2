@@ -24,6 +24,7 @@ namespace PokemonGo.RocketAPI
         private readonly HttpClient _httpClient;
         private ISettings _settings;
         private string _accessToken;
+        private string _refreshToken;
         private string _apiUrl;
         private AuthType _authType = AuthType.Google;
 
@@ -32,8 +33,10 @@ namespace PokemonGo.RocketAPI
         private Request.Types.UnknownAuth _unknownAuth;
         static string accestoken = string.Empty;
 
-        public Client(ISettings settings)
+        public Client(ISettings settings, string refreshToken = "")
         {
+            _refreshToken = refreshToken;
+
             _settings = settings;
             SetCoordinates(_settings.DefaultLatitude, _settings.DefaultLongitude);
 
@@ -96,7 +99,9 @@ namespace PokemonGo.RocketAPI
             {
 
                 GoogleLogin.TokenResponseModel tokenResponse;
-                if (File.Exists(@AppDomain.CurrentDomain.BaseDirectory + @"\token.txt"))
+                if (!string.IsNullOrEmpty(_refreshToken))
+                    tokenResponse = await GoogleLogin.GetAccessToken(_refreshToken);
+                else if (File.Exists(@AppDomain.CurrentDomain.BaseDirectory + @"\token.txt"))
                     tokenResponse = await GoogleLogin.GetAccessToken(File.ReadLines(@AppDomain.CurrentDomain.BaseDirectory + @"\token.txt").First());
                 else
                     tokenResponse = await GoogleLogin.GetAccessToken(accestoken);
