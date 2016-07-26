@@ -249,6 +249,7 @@ namespace PokemonGo.RocketAPI.Window
 
                 await Task.Delay(5000);
                 PrintLevel(client);
+                ShowData(client);
                 //ConsoleLevelTitle(profile.Profile.Username, client);
                 await ExecuteFarmingPokestopsAndPokemons(client);
                 ColoredConsoleWrite(Color.Red, $"No nearby usefull locations found. Please wait 10 seconds.", client.userName);
@@ -578,6 +579,34 @@ namespace PokemonGo.RocketAPI.Window
                 }
             await Task.Delay(1000);
             ConsoleLevelTitle(Username, client);
+        }
+
+        public async Task ShowData(Client client)
+        {
+            string selected = "";
+            comboBox1.Invoke((MethodInvoker)(() => { selected = comboBox1.SelectedItem.ToString(); }));
+            if (selected == client.userName)
+            {
+                var inventory = await client.GetInventory();
+                var stats = inventory.InventoryDelta.InventoryItems.Select(i => i.InventoryItemData?.PlayerStats).ToArray();
+                var profile = await client.GetProfile();
+                foreach (var v in stats)
+                {
+                    if (v != null)
+                    {
+                        int XpDiff = GetXpDiff(client, v.Level);
+                        textBox1.Invoke((MethodInvoker)(() => { textBox1.Text = client.userName; }));
+                        textBox2.Invoke((MethodInvoker)(() => { textBox2.Text = v.Level.ToString(); }));
+                        textBox3.Invoke((MethodInvoker)(() => { textBox3.Text = string.Format($"{(v.Experience - v.PrevLevelXp - XpDiff)}/{ (v.NextLevelXp - v.PrevLevelXp - XpDiff)}"); }));
+                        textBox4.Invoke((MethodInvoker)(() => { textBox4.Text = profile.Profile.Currency.ToArray()[1].Amount.ToString(); }));
+                        textBox5.Invoke((MethodInvoker)(() => { textBox5.Text = client.getCurrentLat().ToString(); }));
+                        textBox6.Invoke((MethodInvoker)(() => { textBox6.Text = client.getCurrentLng().ToString(); }));
+                        textBox7.Invoke((MethodInvoker)(() => { textBox7.Text = Math.Round(TotalExperience / GetRuntime()).ToString(); }));
+                    }
+                }
+            }
+            await Task.Delay(1000);
+            ShowData(client);
         }
 
         public static int GetXpDiff(Client client, int Level)
