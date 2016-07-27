@@ -39,6 +39,8 @@ namespace PokemonGo.RocketAPI.Console
 
         public int LevelTimeInterval => GetSetting() != string.Empty ? System.Convert.ToInt16(GetSetting()) : 600;
 
+        public int ItemRecyclingCount => GetSetting() != string.Empty ? System.Convert.ToInt16(GetSetting()) : 600;
+
         ICollection<KeyValuePair<ItemId, int>> ISettings.ItemRecycleFilter
         {
             get

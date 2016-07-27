@@ -9,15 +9,17 @@
 - [x] Hatch Eggs
 - [x] Evolve Pokemon
 - [x] Add awesome colorZ
+- [ ] Simple GUI
 - [ ] Incubate New Eggs
-- [ ] More proto
+- [ ] Ability to set IVs percentage, say 85%, everything below will be transferred.
+- [ ] Ability to set walking speed.
+- [ ] Add delay when you catch pokemons
+- [ ] Configurable Custom Pathing with GPX
 
 ##Screenshots:
 ![img](http://i.imgur.com/jQrAMOdl.png)
 
 ##Requested Features:
-- [ ] Ability to set IVs percentage, say 85%, everything below will be transferred.
-- [ ] Ability to set walking speed.
 - [ ] Implement seperate farming modes:
 -       a. XP Mode: visits pokestops only (might farm pokemons that may spawn near pokestops)
 -       b. Stardust Mode: Walks/Scans a large radius from given coordinates for pokemons, keeps repeating.

@@ -63,6 +63,17 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Bot\BasePokemonClientJob.cs" />
+    <Compile Include="Bot\Evolution\BasicEvolutionStrategy.cs" />
+    <Compile Include="Bot\Evolution\IEvolutionStrategy.cs" />
+    <Compile Include="Bot\Transfer\AllButStrongestTransferStrategy.cs" />
+    <Compile Include="Bot\Transfer\AllTransferStrategy.cs" />
+    <Compile Include="Bot\Transfer\CpTransferStrategy.cs" />
+    <Compile Include="Bot\Transfer\DuplicatesTransferStrategy.cs" />
+    <Compile Include="Bot\Transfer\IPokemonTransferer.cs" />
+    <Compile Include="Bot\Transfer\ITransferStrategy.cs" />
+    <Compile Include="Bot\Transfer\PokemonTransferer.cs" />
+    <Compile Include="Bot\Transfer\TransferStatus.cs" />
     <Compile Include="Language.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
