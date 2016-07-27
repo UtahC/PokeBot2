@@ -36,7 +36,7 @@ namespace PokemonGo.RocketAPI.Window
         {
             stopwatch = new Stopwatch();
             stopwatch.Start();
-
+            
             IEnumerable<string> refreshTokens = File.ReadLines(@AppDomain.CurrentDomain.BaseDirectory + @"\token.txt");
             Thread.CurrentThread.Name = "-All-";
             comboBox1.Items.Add("-All-");
