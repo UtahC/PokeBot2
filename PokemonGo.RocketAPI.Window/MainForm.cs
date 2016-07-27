@@ -59,6 +59,7 @@ namespace PokemonGo.RocketAPI.Window
                         ColoredConsoleWrite(Color.Red, $"Unhandled exception: {ex}", "-All-");
                     }
                 });
+                Task.Delay(new Random().Next(1, 3) * 1000);
             }
         }
 
@@ -232,14 +233,13 @@ namespace PokemonGo.RocketAPI.Window
                     inventory.InventoryDelta.InventoryItems.Select(i => i.InventoryItemData?.Pokemon)
                         .Where(p => p != null && p?.PokemonId > 0);
 
-                var userName = profile.Profile.Username;
-                Thread.CurrentThread.Name = userName;
-                if (!_indivConsoleText.ContainsKey(userName))
+                Thread.CurrentThread.Name = client.userName;
+                if (!_indivConsoleText.ContainsKey(client.userName))
                 {
-                    _indivConsoleText.Add(userName, "");
+                    _indivConsoleText.Add(client.userName, "");
                     comboBox1.Invoke((MethodInvoker)(() =>
                     {
-                        comboBox1.Items.Add(userName);
+                        comboBox1.Items.Add(client.userName);
                     }));
                 }
 
@@ -274,6 +274,7 @@ namespace PokemonGo.RocketAPI.Window
                 await Task.Delay(5000);
                 PrintLevel(client);
                 ShowData(client);
+                ShowPoke(client);
                 //ConsoleLevelTitle(profile.Profile.Username, client);
                 await ExecuteFarmingPokestopsAndPokemons(client);
                 ColoredConsoleWrite(Color.Red, $"No nearby usefull locations found. Please wait 10 seconds.", client.userName);
@@ -372,7 +373,8 @@ namespace PokemonGo.RocketAPI.Window
 
                 if (fortSearch.ExperienceAwarded != 0)
                     TotalExperience += (fortSearch.ExperienceAwarded);
-                await Task.Delay(15000);
+                //await Task.Delay(15000);
+                await Task.Delay(new Random().Next(5, 10) * 1000);
                 await ExecuteCatchAllNearbyPokemons(client);
             }
         }
@@ -631,6 +633,65 @@ namespace PokemonGo.RocketAPI.Window
             }
             await Task.Delay(1000);
             ShowData(client);
+        }
+
+        public async Task ShowPoke(Client client)
+        {
+            string selected = "";
+            comboBox1.Invoke((MethodInvoker)(() => { selected = comboBox1.SelectedItem.ToString(); }));
+            if (selected == client.userName)
+            {
+                var inventory = await client.GetInventory();
+                var stats = inventory.InventoryDelta.InventoryItems.Select(i => i.InventoryItemData?.PlayerStats).ToArray();
+                var profile = await client.GetProfile();
+
+                DataTable dt = new DataTable();
+                dt.Columns.Add(new DataColumn("Name", typeof(string)));
+                dt.Columns.Add(new DataColumn("CP", typeof(string)));
+                dt.Columns.Add(new DataColumn("Percent", typeof(string)));
+                DataTable dt2 = new DataTable();
+                dt2.Columns.Add(new DataColumn("Name", typeof(string)));
+                dt2.Columns.Add(new DataColumn("CP", typeof(string)));
+                dt2.Columns.Add(new DataColumn("Percent", typeof(string)));
+                var pokemons = inventory.InventoryDelta.InventoryItems
+                    .Select(i => i.InventoryItemData?.Pokemon)
+                    .Where(p => p != null && p?.PokemonId > 0)
+                    .ToArray();
+                foreach (var pokemon in pokemons)
+                {
+                    dt.Rows.Add(new string[] { pokemon.PokemonId.ToString(), pokemon.Cp.ToString(),
+                        ((pokemon.IndividualAttack + pokemon.IndividualDefense + pokemon.IndividualStamina) / 45.0 * 100.0).ToString() });
+                    if (pokemon.PokemonId == PokemonId.Dragonite ||
+                        pokemon.PokemonId == PokemonId.Mew ||
+                        pokemon.PokemonId == PokemonId.Mewtwo ||
+                        pokemon.PokemonId == PokemonId.Moltres ||
+                        pokemon.PokemonId == PokemonId.Snorlax ||
+                        pokemon.PokemonId == PokemonId.Zapdos ||
+                        pokemon.PokemonId == PokemonId.Lapras ||
+                        pokemon.PokemonId == PokemonId.Articuno ||
+                        pokemon.PokemonId == PokemonId.Gyarados ||
+                        pokemon.PokemonId == PokemonId.Muk)
+                        dt2.Rows.Add(new string[] { pokemon.PokemonId.ToString(), pokemon.Cp.ToString(),
+                        ((pokemon.IndividualAttack + pokemon.IndividualDefense + pokemon.IndividualStamina) / 45.0 * 100.0).ToString() });
+                }
+
+                dataGridView1.Invoke((MethodInvoker)(() => 
+                {
+                    var bs = new BindingSource();
+                    bs.DataSource = dt;
+                    dataGridView1.DataSource = bs;
+
+                }));
+                dataGridView2.Invoke((MethodInvoker)(() =>
+                {
+                    var bs = new BindingSource();
+                    bs.DataSource = dt2;
+                    dataGridView2.DataSource = bs;
+
+                }));
+            }
+            await Task.Delay(3000);
+            ShowPoke(client);
         }
 
         public static int GetXpDiff(Client client, int Level)

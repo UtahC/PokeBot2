@@ -47,7 +47,11 @@
             this.label7 = new System.Windows.Forms.Label();
             this.textBox7 = new System.Windows.Forms.TextBox();
             this.comboBox1 = new System.Windows.Forms.ComboBox();
+            this.dataGridView1 = new System.Windows.Forms.DataGridView();
+            this.dataGridView2 = new System.Windows.Forms.DataGridView();
             this.menuStrip1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.dataGridView2)).BeginInit();
             this.SuspendLayout();
             // 
             // logTextBox
@@ -214,11 +218,31 @@
             this.comboBox1.TabIndex = 17;
             this.comboBox1.SelectedIndexChanged += new System.EventHandler(this.comboBox1_SelectedIndexChanged);
             // 
+            // dataGridView1
+            // 
+            this.dataGridView1.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.dataGridView1.Location = new System.Drawing.Point(181, 278);
+            this.dataGridView1.Name = "dataGridView1";
+            this.dataGridView1.RowTemplate.Height = 24;
+            this.dataGridView1.Size = new System.Drawing.Size(240, 259);
+            this.dataGridView1.TabIndex = 18;
+            // 
+            // dataGridView2
+            // 
+            this.dataGridView2.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.dataGridView2.Location = new System.Drawing.Point(427, 278);
+            this.dataGridView2.Name = "dataGridView2";
+            this.dataGridView2.RowTemplate.Height = 24;
+            this.dataGridView2.Size = new System.Drawing.Size(240, 259);
+            this.dataGridView2.TabIndex = 19;
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(784, 562);
+            this.Controls.Add(this.dataGridView2);
+            this.Controls.Add(this.dataGridView1);
             this.Controls.Add(this.comboBox1);
             this.Controls.Add(this.textBox7);
             this.Controls.Add(this.label7);
@@ -243,6 +267,8 @@
             this.Load += new System.EventHandler(this.MainForm_Load);
             this.menuStrip1.ResumeLayout(false);
             this.menuStrip1.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.dataGridView1)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.dataGridView2)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -269,6 +295,8 @@
         private System.Windows.Forms.Label label7;
         private System.Windows.Forms.TextBox textBox7;
         private System.Windows.Forms.ComboBox comboBox1;
+        private System.Windows.Forms.DataGridView dataGridView1;
+        private System.Windows.Forms.DataGridView dataGridView2;
     }
 }
 

@@ -310,7 +310,7 @@ namespace PokemonGo.RocketAPI
             var profileRequest = RequestBuilder.GetInitialRequest(_accessToken, _authType, _currentLat, _currentLng, 10,
                 new Request.Types.Requests {Type = (int) RequestType.GET_PLAYER});
             var profile = await _httpClient.PostProtoPayload<Request, GetPlayerResponse>($"https://{_apiUrl}/rpc", profileRequest);
-            userName = profile.Profile.Username;
+            userName = _authType == AuthType.Google ? profile.Profile.Username : "_" + profile.Profile.Username;
             return profile;
                 
         }
