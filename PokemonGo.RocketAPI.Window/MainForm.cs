@@ -42,13 +42,13 @@ namespace PokemonGo.RocketAPI.Window
             comboBox1.Items.Add("-All-");
             comboBox1.SelectedIndex = 0;
 
-            foreach (var refreshToken in refreshTokens)
+            foreach (var loginString in refreshTokens)
             {
                 Task.Run(() =>
                 {
                     try
                     {
-                        Execute(refreshToken);
+                        Execute(loginString);
                     }
                     catch (PtcOfflineException)
                     {
@@ -71,18 +71,18 @@ namespace PokemonGo.RocketAPI.Window
                 return;
             }
             //string textToAppend = Thread.CurrentThread.Name == "main" ? string.Format($"[{Thread.CurrentThread.Name}] ") : "";
-            string textToAppend = string.Format($"[{ DateTime.Now.ToString("HH:mm:ss")}] {value}\r\n");
+            string textToAppend = string.Format("[{0}] {1}\r\n", DateTime.Now.ToString("HH:mm:ss"), value);
             if (userName == comboBox1.SelectedItem.ToString() || comboBox1.SelectedItem.ToString() == "-All-")
             { 
                 logTextBox.SelectionColor = color;
                 if (comboBox1.SelectedItem.ToString() == "-All-")
-                    logTextBox.AppendText(string.Format($"[{userName}] {textToAppend}"));
+                    logTextBox.AppendText(string.Format("[{0}] {1}", userName, textToAppend));
                 else
                     logTextBox.AppendText(textToAppend);
             }
-            if (userName != "-All-")
+            if (userName != "-All-" && userName != null)
                 _indivConsoleText[userName] += textToAppend;
-            _totalConsoleText += string.Format($"[{userName}] {textToAppend}");
+            _totalConsoleText += string.Format("[{0}] {1}", userName, textToAppend);
         }
 
         private static readonly ISettings ClientSettings = new Settings();
@@ -125,7 +125,22 @@ namespace PokemonGo.RocketAPI.Window
 	                FAILED_POKEMON_IS_DEPLOYED = 5;
                 }
                 }*/
-
+                if (pokemon.PokemonId != PokemonId.Eevee &&
+                    pokemon.PokemonId != PokemonId.Caterpie &&
+                    pokemon.PokemonId != PokemonId.Slowpoke &&
+                    pokemon.PokemonId != PokemonId.Spearow &&
+                    pokemon.PokemonId != PokemonId.Zubat &&
+                    pokemon.PokemonId != PokemonId.Pidgeot &&
+                    pokemon.PokemonId != PokemonId.Rattata &&
+                    pokemon.PokemonId != PokemonId.Jigglypuff &&
+                    pokemon.PokemonId != PokemonId.Weedle &&
+                    pokemon.PokemonId != PokemonId.Oddish &&
+                    pokemon.PokemonId != PokemonId.Venonat &&
+                    pokemon.PokemonId != PokemonId.Magikarp &&
+                    pokemon.PokemonId != PokemonId.NidoranMale &&
+                    pokemon.PokemonId != PokemonId.NidoranFemale &&
+                    pokemon.PokemonId != PokemonId.Bellsprout)
+                    continue;
                 var countOfEvolvedUnits = 0;
                 var xpCount = 0;
 
@@ -189,15 +204,24 @@ namespace PokemonGo.RocketAPI.Window
             }
         }
 
-        private async void Execute(string refreshToken = "")
+        private async void Execute(string loginString = "")
         {
-            var client = new Client(ClientSettings, refreshToken);
+            
+            Client client = null;
             try
             {
-                if (ClientSettings.AuthType == AuthType.Ptc)
-                    await client.DoPtcLogin(ClientSettings.PtcUsername, ClientSettings.PtcPassword);
-                else if (ClientSettings.AuthType == AuthType.Google)
+                if (loginString.Contains(','))
+                {
+                    var ptcUsername = loginString.Substring(loginString.IndexOf(':') + 1, loginString.IndexOf(',') - loginString.IndexOf(':') - 1);
+                    var ptcPassword = loginString.Substring(loginString.IndexOf(',') + 1);
+                    client = new Client(ClientSettings);
+                    await client.DoPtcLogin(ptcUsername, ptcPassword);
+                }
+                else
+                {
+                    client = new Client(ClientSettings, loginString.Substring(loginString.IndexOf(':') + 1));
                     await client.DoGoogleLogin();
+                }
 
                 await client.SetServer();
                 var profile = await client.GetProfile();
@@ -254,13 +278,13 @@ namespace PokemonGo.RocketAPI.Window
                 await ExecuteFarmingPokestopsAndPokemons(client);
                 ColoredConsoleWrite(Color.Red, $"No nearby usefull locations found. Please wait 10 seconds.", client.userName);
                 await Task.Delay(10000);
-                Execute(refreshToken);
+                Execute(loginString);
             }
-            catch (TaskCanceledException tce) { ColoredConsoleWrite(Color.White, "Task Canceled Exception - Restarting", client.userName); Execute(refreshToken); }
-            catch (UriFormatException ufe) { ColoredConsoleWrite(Color.White, "System URI Format Exception - Restarting", client.userName); Execute(refreshToken); }
-            catch (ArgumentOutOfRangeException aore) { ColoredConsoleWrite(Color.White, "ArgumentOutOfRangeException - Restarting", client.userName); Execute(refreshToken); }
-            catch (ArgumentNullException ane) { ColoredConsoleWrite(Color.White, "Argument Null Refference - Restarting", client.userName); Execute(refreshToken); }
-            catch (NullReferenceException nre) { ColoredConsoleWrite(Color.White, "Null Refference - Restarting", client.userName); Execute(refreshToken); }
+            catch (TaskCanceledException tce) { ColoredConsoleWrite(Color.White, "Task Canceled Exception - Restarting", client.userName); Execute(loginString); }
+            catch (UriFormatException ufe) { ColoredConsoleWrite(Color.White, "System URI Format Exception - Restarting", client.userName); Execute(loginString); }
+            catch (ArgumentOutOfRangeException aore) { ColoredConsoleWrite(Color.White, "ArgumentOutOfRangeException - Restarting", client.userName); Execute(loginString); }
+            catch (ArgumentNullException ane) { ColoredConsoleWrite(Color.White, "Argument Null Refference - Restarting", client.userName); Execute(loginString); }
+            catch (NullReferenceException nre) { ColoredConsoleWrite(Color.White, "Null Refference - Restarting", client.userName); Execute(loginString); }
             //await ExecuteCatchAllNearbyPokemons(client);
         }
 

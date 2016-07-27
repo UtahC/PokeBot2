@@ -36,7 +36,10 @@ namespace PokemonGo.RocketAPI
 
         public Client(ISettings settings, string refreshToken = "")
         {
-            _refreshToken = refreshToken;
+            if (refreshToken == "")
+                _authType = AuthType.Ptc;
+            else
+                _refreshToken = refreshToken;
 
             _settings = settings;
             SetCoordinates(_settings.DefaultLatitude, _settings.DefaultLongitude);
